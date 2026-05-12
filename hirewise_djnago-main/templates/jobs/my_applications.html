@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Applications — Hirewise{% endblock %}
+
+{% block body %}
+<div id="app-screen" class="screen active">
+
+    <!-- Top Navigation Bar -->
+    <nav class="topnav">
+        <div class="topnav-brand">Hirewise</div>
+        <div class="topnav-center">
+            <div id="applicant-tabs" class="nav-tabs">
+                <a href="{% url 'browse_jobs' %}" class="nav-tab">Browse Jobs</a>
+                <a href="{% url 'my_applications' %}" class="nav-tab active">My Applications</a>
+            </div>
+        </div>
+        <div class="topnav-right">
+            <span class="nav-username">Hi, {{ request.user.first_name }}</span>
+            <form method="POST" action="{% url 'logout' %}" style="display:inline">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">Logout</button>
+            </form>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% if messages %}
+    <div class="messages-bar">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- My Applications Section -->
+    <section id="my-applications" class="section active">
+        <div class="section-header">
+            <h2>My Applications</h2>
+        </div>
+
+        <div id="applications-list" class="applications-list">
+            {% for app in applications %}
+            <div class="app-row {% if app.status == 'accepted' %}app-row--accepted{% elif app.status == 'rejected' %}app-row--rejected{% endif %}">
+                <div class="app-info">
+                    <div class="app-job-title">{{ app.job.title }}</div>
+                    <div class="app-meta">
+                        {{ app.job.recruiter.get_full_name|default:app.job.recruiter.username }}
+                        &middot; {{ app.job.domain }}
+                        &middot; Applied {{ app.applied_at|date:"M j, Y" }}
+                    </div>
+                    {% if app.status == 'accepted' %}
+                    <div class="app-accepted-notice">
+                        🎉 Congratulations! The recruiter has accepted your application.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="app-actions">
+                    <span class="status-badge {{ app.status }}">{{ app.get_status_display }}</span>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <h3>No applications yet</h3>
+                <p>Browse open positions and hit Apply to get started.</p>
+                <a href="{% url 'browse_jobs' %}" class="cta-btn" style="display:inline-flex;margin-top:1rem">Browse Jobs <span>→</span></a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+</div>
+{% endblock %}

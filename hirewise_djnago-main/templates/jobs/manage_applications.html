@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Applicants — Hirewise{% endblock %}
+
+{% block body %}
+<div id="app-screen" class="screen active">
+
+    <!-- Top Navigation Bar -->
+    <nav class="topnav">
+        <div class="topnav-brand">Hirewise</div>
+        <div class="topnav-center">
+            <div id="recruiter-tabs" class="nav-tabs">
+                <a href="{% url 'post_job' %}" class="nav-tab">Post a Job</a>
+                <a href="{% url 'manage_applications' %}" class="nav-tab active">Applicants</a>
+            </div>
+        </div>
+        <div class="topnav-right">
+            <span class="nav-username">Hi, {{ request.user.first_name }}</span>
+            <form method="POST" action="{% url 'logout' %}" style="display:inline">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">Logout</button>
+            </form>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% if messages %}
+    <div class="messages-bar">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Manage Applications Section -->
+    <section id="manage-applications" class="section active">
+        <div class="section-header">
+            <h2>Applicants</h2>
+        </div>
+
+        <div id="recruiter-applications-list" class="applications-list">
+            {% for app in applications %}
+            <div class="app-row" id="app-row-{{ app.id }}">
+                <div class="app-info">
+                    <div class="app-job-title">{{ app.applicant.get_full_name|default:app.applicant.username }}</div>
+                    <div class="app-meta">
+                        Applied for <strong>{{ app.job.title }}</strong>
+                        &middot; {{ app.applicant.email }}
+                        &middot; {{ app.applicant.domain|default:"N/A" }}
+                        &middot; {{ app.applied_at|date:"M j, Y" }}
+                    </div>
+
+                    <div class="app-meta" style="margin-top: 6px; display:flex; gap:1.5rem; flex-wrap:wrap;">
+                        {% if app.applicant.phone %}
+                        <span>📞 {{ app.applicant.phone }}</span>
+                        {% endif %}
+                        {% if app.applicant.position_applied_for %}
+                        <span>🎯 {{ app.applicant.position_applied_for }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="app-meta" style="margin-top: 8px;">
+                        {% if app.applicant.skills %}
+                        <div><strong>Skills:</strong> {{ app.applicant.skills }}</div>
+                        {% endif %}
+                        {% if app.applicant.certifications %}
+                        <div><strong>Certifications:</strong> {{ app.applicant.certifications }}</div>
+                        {% endif %}
+                        {% if app.applicant.experience %}
+                        <div style="margin-top:4px;"><strong>Experience:</strong> {{ app.applicant.experience }}</div>
+                        {% endif %}
+                        {% if app.applicant.address %}
+                        <div style="margin-top:4px;"><strong>Address:</strong> {{ app.applicant.address }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Resume Download -->
+                    {% if app.applicant.resume %}
+                    <div style="margin-top: 8px;">
+                        <a href="{% url 'download_resume' app.applicant.id %}"
+                           class="resume-download-btn" target="_blank">
+                            📄 Download Resume
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="app-meta" style="margin-top:8px; font-style:italic; color:var(--muted);">
+                        No resume uploaded
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="app-actions">
+                    {% if app.status == 'pending' %}
+                    <form method="POST" action="{% url 'update_status' app.id %}" style="display:flex; gap:0.5rem; flex-direction:column;">
+                        {% csrf_token %}
+                        <button type="submit" name="status" value="accepted" class="accept-btn">Accept</button>
+                        <button type="submit" name="status" value="rejected" class="reject-btn">Reject</button>
+                    </form>
+                    {% else %}
+                    <span class="status-badge {{ app.status }}">{{ app.get_status_display }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <h3>No applications yet</h3>
+                <p>Applications for your posted jobs will appear here.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+</div>
+{% endblock %}

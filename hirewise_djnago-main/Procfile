@@ -1,0 +1,2 @@
+web: gunicorn hirewise.wsgi
+release: python manage.py migrate

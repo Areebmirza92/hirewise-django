@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Browse Jobs — Hirewise{% endblock %}
+
+{% block body %}
+<div id="app-screen" class="screen active">
+
+    <!-- Top Navigation Bar -->
+    <nav class="topnav">
+        <div class="topnav-brand">Hirewise</div>
+        <div class="topnav-center">
+            <div id="applicant-tabs" class="nav-tabs">
+                <a href="{% url 'browse_jobs' %}" class="nav-tab active">Browse Jobs</a>
+                <a href="{% url 'my_applications' %}" class="nav-tab">My Applications</a>
+            </div>
+        </div>
+        <div class="topnav-right">
+            <span class="nav-username">Hi, {{ request.user.first_name }}</span>
+            <form method="POST" action="{% url 'logout' %}" style="display:inline">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">Logout</button>
+            </form>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% if messages %}
+    <div class="messages-bar">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Browse Jobs Section -->
+    <section id="browse-jobs" class="section active">
+        <div class="section-header">
+            <h2>Open Positions</h2>
+            <div class="filter-bar">
+                {% for domain in domains %}
+                <a href="?domain={{ domain }}"
+                   class="filter-chip {% if selected_domain == domain %}active{% endif %}">
+                    {{ domain }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="jobs-grid" class="jobs-grid">
+            {% for job in jobs %}
+            <article class="job-card">
+                <div class="job-card-header">
+                    <h3 class="job-title">{{ job.title }}</h3>
+                    <span class="domain-badge">{{ job.domain }}</span>
+                </div>
+                <p class="job-desc">{{ job.description }}</p>
+                <div class="job-footer">
+                    <span class="recruiter-name">
+                        Posted by {{ job.recruiter.get_full_name|default:job.recruiter.username }}
+                        &middot; {{ job.created_at|date:"M j" }}
+                    </span>
+                    {% if job.id in applied_ids %}
+                    <button class="apply-btn applied" disabled>✓ Applied</button>
+                    {% else %}
+                    <form method="POST" action="{% url 'apply_job' job.id %}" class="inline-form">
+                        {% csrf_token %}
+                        <button type="submit" class="apply-btn">Apply</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </article>
+
+            {% empty %}
+            <div class="empty-state" style="grid-column:1/-1">
+                <h3>No jobs found</h3>
+                <p>Try a different domain filter.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+</div>
+{% endblock %}

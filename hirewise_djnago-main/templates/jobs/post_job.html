@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Post a Job — Hirewise{% endblock %}
+
+{% block body %}
+<div id="app-screen" class="screen active">
+
+    <!-- Top Navigation Bar -->
+    <nav class="topnav">
+        <div class="topnav-brand">Hirewise</div>
+        <div class="topnav-center">
+            <div id="recruiter-tabs" class="nav-tabs">
+                <a href="{% url 'post_job' %}" class="nav-tab active">Post a Job</a>
+                <a href="{% url 'manage_applications' %}" class="nav-tab">Applicants</a>
+            </div>
+        </div>
+        <div class="topnav-right">
+            <span class="nav-username">Hi, {{ request.user.first_name }}</span>
+            <form method="POST" action="{% url 'logout' %}" style="display:inline">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">Logout</button>
+            </form>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% if messages %}
+    <div class="messages-bar">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Post Job Section -->
+    <section id="post-job" class="section active">
+        <div class="section-header">
+            <h2>Post a New Job</h2>
+        </div>
+        <div class="form-card">
+            <form method="POST" action="{% url 'post_job' %}">
+                {% csrf_token %}
+                <div class="field">
+                    <label>Job Title *</label>
+                    <input type="text" name="title" id="job-title"
+                           placeholder="e.g. Senior Software Engineer"
+                           value="{{ form.title.value|default:'' }}" required />
+                    {% for error in form.title.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field">
+                    <label>Domain *</label>
+                    <select name="domain" id="job-domain" required>
+                        <option value="">Select domain…</option>
+                        {% for value, label in form.fields.domain.choices %}
+                        <option value="{{ value }}"
+                            {% if form.domain.value == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% for error in form.domain.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field">
+                    <label>Job Description *</label>
+                    <textarea name="description" id="job-description" rows="5"
+                              placeholder="Describe the role, responsibilities, and requirements…"
+                              required>{{ form.description.value|default:'' }}</textarea>
+                    {% for error in form.description.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+                </div>
+                <button type="submit" class="cta-btn">Post Job <span>→</span></button>
+            </form>
+        </div>
+
+        <!-- My Posted Jobs -->
+        {% if my_jobs %}
+        <div class="section-header" style="margin-top: 3rem;">
+            <h2>Your Posted Jobs</h2>
+        </div>
+        <div class="jobs-grid">
+            {% for job in my_jobs %}
+            <article class="job-card">
+                <div class="job-card-header">
+                    <h3 class="job-title">{{ job.title }}</h3>
+                    <span class="domain-badge">{{ job.domain }}</span>
+                </div>
+                <p class="job-desc">{{ job.description|truncatewords:30 }}</p>
+                <div class="job-footer">
+                    <span class="recruiter-name">Posted {{ job.created_at|date:"M j, Y" }}</span>
+                    <a href="{% url 'manage_applications' %}?job={{ job.id }}"
+                       class="apply-btn" style="text-decoration:none">
+                        {{ job.applications.count }} Applicant{{ job.applications.count|pluralize }}
+                    </a>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </section>
+
+</div>
+{% endblock %}

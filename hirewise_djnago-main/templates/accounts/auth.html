@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Hirewise — Login & Register{% endblock %}
+
+{% block body %}
+<div id="auth-screen" class="screen active">
+
+    <!-- Left decorative panel -->
+    <aside class="auth-visual">
+        <div class="visual-content">
+            <div class="brand-mark">HW</div>
+            <h1 class="hero-title">Find work<br>that <em>fits.</em></h1>
+            <p class="hero-sub">Connect with top recruiters across Technology, Finance, Media, and more.</p>
+            <div class="stats-row">
+                <div class="stat-pill"><span>900+</span> Jobs</div>
+                <div class="stat-pill"><span>200+</span> Recruiters</div>
+                <div class="stat-pill"><span>12k+</span> Placed</div>
+            </div>
+        </div>
+        <div class="visual-deco"></div>
+    </aside>
+
+    <!-- Right auth panel -->
+    <main class="auth-panel">
+        <div class="auth-box">
+
+            <!-- Django flash messages -->
+            {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Role toggle -->
+            <div class="role-toggle">
+                <button class="role-btn {% if active_role == 'applicant' %}active{% endif %}"
+                        data-role="applicant" onclick="setRole('applicant')">
+                    I'm an Applicant
+                </button>
+                <button class="role-btn {% if active_role == 'recruiter' %}active{% endif %}"
+                        data-role="recruiter" onclick="setRole('recruiter')">
+                    I'm a Recruiter
+                </button>
+            </div>
+
+            <!-- Tab switcher: Login / Register -->
+            <div class="tab-switcher">
+                <button class="tab-btn {% if active_tab == 'login' %}active{% endif %}"
+                        onclick="showTab('login')">Login</button>
+                <button class="tab-btn {% if active_tab == 'register' %}active{% endif %}"
+                        onclick="showTab('register')">Register</button>
+            </div>
+
+            <!-- ══ LOGIN FORM ══ -->
+            <form id="login-form"
+                  class="auth-form {% if active_tab != 'login' %}hidden{% endif %}"
+                  method="POST" action="{% url 'auth' %}">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="login" />
+                <input type="hidden" name="role" id="login-role-hidden" value="{{ active_role }}" />
+
+                <div class="field">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="you@example.com"
+                           value="{{ login_form.email.value|default:'' }}" required />
+                </div>
+                <div class="field">
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="••••••••" required />
+                </div>
+
+                {% if active_tab == 'login' and login_form.errors %}
+                <div class="form-error">
+                    {% for error in login_form.non_field_errors %}{{ error }}{% endfor %}
+                    {% for field in login_form %}{% for error in field.errors %}{{ error }}{% endfor %}{% endfor %}
+                </div>
+                {% endif %}
+
+                <button type="submit" class="cta-btn">Login <span>→</span></button>
+                <p class="form-hint">Demo password for seed accounts: <code>password123</code></p>
+            </form>
+
+            <!-- ══ REGISTER FORM ══ -->
+            <div id="register-form" class="{% if active_tab != 'register' %}hidden{% endif %}">
+
+                <!-- ── Applicant Register ── -->
+                <form id="register-applicant-form"
+                      class="auth-form {% if active_role == 'recruiter' %}hidden{% endif %}"
+                      method="POST" action="{% url 'auth' %}"
+                      enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="register_applicant" />
+                    <input type="hidden" name="active_role" value="applicant" />
+
+                    <div class="register-grid">
+                        <!-- Personal Info -->
+                        <div class="register-section-title">Personal Information</div>
+
+                        <div class="field-row">
+                            <div class="field">
+                                <label>First Name *</label>
+                                <input type="text" name="first_name"
+                                       placeholder="Jane"
+                                       value="{{ applicant_form.first_name.value|default:'' }}" required />
+                            </div>
+                            <div class="field">
+                                <label>Last Name *</label>
+                                <input type="text" name="last_name"
+                                       placeholder="Doe"
+                                       value="{{ applicant_form.last_name.value|default:'' }}" required />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label>Email Address *</label>
+                            <input type="email" name="email" placeholder="you@example.com"
+                                   value="{{ applicant_form.email.value|default:'' }}" required />
+                        </div>
+
+                        <div class="field">
+                            <label>Password *</label>
+                            <input type="password" name="password" placeholder="Min. 6 characters" required />
+                        </div>
+
+                        <div class="field">
+                            <label>Phone Number</label>
+                            <input type="text" name="phone" placeholder="+91 98765 43210"
+                                   value="{{ applicant_form.phone.value|default:'' }}" />
+                        </div>
+
+                        <div class="field">
+                            <label>Address</label>
+                            <textarea name="address" rows="2"
+                                      placeholder="123 Main St, City, Country">{{ applicant_form.address.value|default:'' }}</textarea>
+                        </div>
+
+                        <!-- Position Details -->
+                        <div class="register-section-title">Position Details</div>
+
+                        <div class="field">
+                            <label>Position Applying For</label>
+                            <input type="text" name="position_applied_for"
+                                   placeholder="e.g. Frontend Engineer"
+                                   value="{{ applicant_form.position_applied_for.value|default:'' }}" />
+                        </div>
+
+                        <div class="field">
+                            <label>Industry / Domain</label>
+                            <select name="domain">
+                                <option value="">Select domain…</option>
+                                {% for value, label in applicant_form.fields.domain.choices %}
+                                <option value="{{ value }}"
+                                    {% if applicant_form.domain.value == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Work Experience -->
+                        <div class="register-section-title">Work Experience</div>
+
+                        <div class="field">
+                            <label>Work Experience</label>
+                            <textarea name="experience" rows="3"
+                                      placeholder="Describe your work history, roles, and achievements…">{{ applicant_form.experience.value|default:'' }}</textarea>
+                        </div>
+
+                        <!-- Skills & Certifications -->
+                        <div class="register-section-title">Skills &amp; Certifications</div>
+
+                        <div class="field">
+                            <label>Skills</label>
+                            <input type="text" name="skills"
+                                   placeholder="e.g. React, Excel, Python, Project Management"
+                                   value="{{ applicant_form.skills.value|default:'' }}" />
+                        </div>
+
+                        <div class="field">
+                            <label>Certifications</label>
+                            <input type="text" name="certifications"
+                                   placeholder="e.g. AWS Certified, PMP, CFA Level 1"
+                                   value="{{ applicant_form.certifications.value|default:'' }}" />
+                        </div>
+
+                        <!-- Resume Upload -->
+                        <div class="register-section-title">Resume Upload</div>
+
+                        <div class="field">
+                            <label>Upload CV / Resume</label>
+                            <div class="file-upload-wrapper">
+                                <input type="file" name="resume" id="resume-file"
+                                       accept=".pdf,.doc,.docx"
+                                       class="file-input" />
+                                <label for="resume-file" class="file-label">
+                                    <span class="file-icon">📎</span>
+                                    <span class="file-text">Choose file (PDF, DOC, DOCX — max 5MB)</span>
+                                </label>
+                                <span class="file-chosen" id="file-chosen-name"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if active_tab == 'register' and active_role == 'applicant' and applicant_form.errors %}
+                    <div class="form-error">
+                        {% for field in applicant_form %}{% for error in field.errors %}{{ field.label }}: {{ error }}<br/>{% endfor %}{% endfor %}
+                        {% for error in applicant_form.non_field_errors %}{{ error }}<br/>{% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <button type="submit" class="cta-btn">Create Applicant Account <span>→</span></button>
+                </form>
+
+                <!-- ── Recruiter Register ── -->
+                <form id="register-recruiter-form"
+                      class="auth-form {% if active_role == 'applicant' %}hidden{% endif %}"
+                      method="POST" action="{% url 'auth' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="register_recruiter" />
+                    <input type="hidden" name="active_role" value="recruiter" />
+
+                    <div class="field-row">
+                        <div class="field">
+                            <label>First Name *</label>
+                            <input type="text" name="first_name"
+                                   placeholder="John"
+                                   value="{{ recruiter_form.first_name.value|default:'' }}" required />
+                        </div>
+                        <div class="field">
+                            <label>Last Name *</label>
+                            <input type="text" name="last_name"
+                                   placeholder="Smith"
+                                   value="{{ recruiter_form.last_name.value|default:'' }}" required />
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>Email Address *</label>
+                        <input type="email" name="email" placeholder="you@company.com"
+                               value="{{ recruiter_form.email.value|default:'' }}" required />
+                    </div>
+                    <div class="field">
+                        <label>Password *</label>
+                        <input type="password" name="password" placeholder="Min. 6 characters" required />
+                    </div>
+                    <div class="field">
+                        <label>Industry / Domain</label>
+                        <select name="domain">
+                            <option value="">Select domain…</option>
+                            {% for value, label in recruiter_form.fields.domain.choices %}
+                            <option value="{{ value }}"
+                                {% if recruiter_form.domain.value == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {% if active_tab == 'register' and active_role == 'recruiter' and recruiter_form.errors %}
+                    <div class="form-error">
+                        {% for field in recruiter_form %}{% for error in field.errors %}{{ field.label }}: {{ error }}<br/>{% endfor %}{% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <button type="submit" class="cta-btn">Create Recruiter Account <span>→</span></button>
+                </form>
+
+            </div><!-- /register-form -->
+
+        </div><!-- /auth-box -->
+    </main>
+
+</div><!-- /auth-screen -->
+
+<script>
+// ── Role & Tab toggling (pure JS, no API calls needed) ──────────
+let selectedRole = '{{ active_role }}';
+
+function setRole(role) {
+    selectedRole = role;
+    document.querySelectorAll('.role-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.role === role);
+    });
+
+    // Show correct registration sub-form
+    const appForm = document.getElementById('register-applicant-form');
+    const recForm = document.getElementById('register-recruiter-form');
+    if (appForm) appForm.classList.toggle('hidden', role !== 'applicant');
+    if (recForm) recForm.classList.toggle('hidden', role !== 'recruiter');
+
+    // Update hidden role field in login form
+    const loginRoleHidden = document.getElementById('login-role-hidden');
+    if (loginRoleHidden) loginRoleHidden.value = role;
+}
+
+function showTab(tab) {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+
+    loginForm.classList.toggle('hidden', tab !== 'login');
+    registerForm.classList.toggle('hidden', tab !== 'register');
+
+    document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('active',
+            (i === 0 && tab === 'login') || (i === 1 && tab === 'register'));
+    });
+}
+
+// Resume filename display
+const resumeInput = document.getElementById('resume-file');
+const fileChosenName = document.getElementById('file-chosen-name');
+if (resumeInput && fileChosenName) {
+    resumeInput.addEventListener('change', () => {
+        fileChosenName.textContent = resumeInput.files.length > 0
+            ? resumeInput.files[0].name
+            : '';
+    });
+}
+</script>
+{% endblock %}
